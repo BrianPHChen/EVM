@@ -14,11 +14,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import include, url
-from .views import TxDeploy, MultisigDeploy
+from .views import TxDeploy, MultisigDeploy, CallConstantFunction
 
 urlpatterns = [
     url(r'^states/', include('evm_manager.urls')),
     url(r'^txdeploy/(?P<tx_hash>[a-zA-Z0-9]+)(|/)$', TxDeploy.as_view()),
     url(r'^multisigdeploy/(?P<multisig_address>[a-zA-Z0-9]+)(|/)$', MultisigDeploy.as_view()),
+    url(r'^callconstantfunction/$', CallConstantFunction.as_view())
 ]
 

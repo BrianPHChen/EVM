@@ -6,7 +6,8 @@ from rest_framework.views import APIView
 
 from evm_manager import deploy_contract_utils
 
-from evm import ERROR_CODE, error_response, data_response
+from evm import (ERROR_CODE, error_response, data_response,
+                 ConstantFunctionSerializer)
 
 import threading
 
@@ -27,7 +28,6 @@ def make_multisig_address_file(multisig_address):
     deploy_contract_utils.make_multisig_address_file(multisig_address)
 
 class TxDeploy(APIView):
-    @handle_uncaught_exception
     def post(self, request, tx_hash):
         response = {"message": 'Start to deploy tx_hash ' + tx_hash}
         t = threading.Thread(target=evm_deploy, args=[tx_hash, ])
@@ -39,7 +39,6 @@ class MultisigDeploy(APIView):
     """
     make a multisig address file
     """
-    @handle_uncaught_exception
     def post(self, request, multisig_address):
         response = {"message": 'Start to make a multisig address file'}
         t = threading.Thread(target=make_multisig_address_file, args=[multisig_address, ])
@@ -51,9 +50,20 @@ class CallConstantFunction(APIView):
     """
     call constant function
     """
-    @handle_uncaught_exception
+    cons_func_serializer = ConstantFunctionSerializer
+
     def post(self, request):
-        
+        serializer = self.cons_func_serializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=False):
+                sender_address = serializer.validated_data['sender_address']
+                multisig_address = serializer.validated_data['multisig_address']
+                evm_input_code = serializer.validated_data['evm_input_code']
+                amount = serializer.validated_data['amount']
+                contract_address = serializer.validated_data['contract_address']
+        else:
+            return response_utils.error_response(status.HTTP_400_BAD_REQUEST, str(serializer.errors))
+
         data = deploy_contract_utils.call_constant_function(
                     sender_address, multisig_address, evm_input_code, amount, contract_address)
         response = {"message": 'Start to make a multisig address file'}
