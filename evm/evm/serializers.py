@@ -7,3 +7,8 @@ class ConstantFunctionSerializer(serializers.Serializer):
     evm_input_code = serializers.CharField()
     amount = serializers.IntegerField()
     contract_address = serializers.CharField()
+
+
+class GetNonceSerializer(serializers.Serializer):
+    sender_address = serializers.CharField()
+    multisig_address = serializers.CharField()

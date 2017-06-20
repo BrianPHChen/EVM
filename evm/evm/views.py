@@ -4,16 +4,17 @@ except ImportError:
     import httplib
 from rest_framework.views import APIView
 
-from evm_manager import deploy_contract_utils
+from evm_manager import deploy_contract_utils, utils
 
 from evm import (ERROR_CODE, error_response, data_response,
-                 ConstantFunctionSerializer)
+                 ConstantFunctionSerializer, GetNonceSerializer)
 
 import threading
 
 def evm_deploy(tx_hash):
     print('Deploy tx_hash ' + tx_hash)
     completed = deploy_contract_utils.deploy_contracts(tx_hash)
+    print('\n')
     if completed:
         print('Deployed Success')
     else:
@@ -67,4 +68,23 @@ class CallConstantFunction(APIView):
         data = deploy_contract_utils.call_constant_function(
                     sender_address, multisig_address, evm_input_code, amount, contract_address)
         response = {"message": 'Start to make a multisig address file'}
+        return data_response(response)
+
+
+class GetNonce(APIView):
+    """getnounce
+    """
+    get_nonce_serializer = GetNonceSerializer
+
+    def post(self, request):
+        serializer = self.get_nonce_serializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=False):
+                sender_address = serializer.validated_data['sender_address']
+                multisig_address = serializer.validated_data['multisig_address']
+        else:
+            return response_utils.error_response(status.HTTP_400_BAD_REQUEST, str(serializer.errors))
+
+        nonce = utils.get_nonce(multisig_address, sender_address)
+        response = {"nonce": nonce}
         return data_response(response)

@@ -121,3 +121,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+GCOIN_BACKEND = 'gcoinbackend.backends.apibackend.GcoinAPIBackend'
+GCOIN_BACKEND_SETTINGS = {
+    'BASE_URL': OSS_API_URL,
+    'KEY_STORE_CLASS': None
+}

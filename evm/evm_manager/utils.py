@@ -106,10 +106,18 @@ def sha3(seed):
 def get_nonce(multisig_address, sender_address):
     sender_evm_address = wallet_address_to_evm(sender_address)
     contract_path = os.path.dirname(os.path.abspath(__file__)) + '/../states/' + multisig_address
-    with open(contract_path, 'r') as f:
-        content = json.load(f)
-        if sender_evm_address in content['accounts']:
-            return content['accounts'][sender_evm_address]['nonce']
+    try:
+        with open(contract_path, 'r') as f:
+            content = json.load(f)
+            if sender_evm_address in content['accounts']:
+                return content['accounts'][sender_evm_address]['nonce']
+            else:
+                return None
+    except IOError as e:
+        """If there is no state file, we still return null
+        """
+        print(e)
+        return None
 
 
 def get_tx_info(tx_or_hash):
