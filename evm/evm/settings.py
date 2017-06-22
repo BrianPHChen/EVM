@@ -11,12 +11,17 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import environ
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-OSS_API_URL = "http://oss.vchain.com:7790"
+# environ setting
+root = environ.Path(__file__) - 2  # three folder back
+env = environ.Env(DEBUG=(bool, False),)  # set default values and casting
+env.read_env(str(root.path('.env')))
 
+OSS_API_URL = env("OSS_API_URL")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
@@ -126,4 +131,12 @@ GCOIN_BACKEND = 'gcoinbackend.backends.apibackend.GcoinAPIBackend'
 GCOIN_BACKEND_SETTINGS = {
     'BASE_URL': OSS_API_URL,
     'KEY_STORE_CLASS': None
+}
+
+EVM_DAEMON_SETTINGS = {
+    'CALLER': env("EVM_DAEMON_CALLER"),
+    'IPC': env("EVM_DAEMON_IPC"),
+    'TMP_DIR': env("EVM_DAEMON_TMP_DIR"),
+    'LOG_DIR': env("EVM_DAEMON_LOG_DIR"),
+    'BACKUP_DIR': env("EVM_DAEMON_BACKUP_DIR"),
 }

@@ -14,10 +14,10 @@ import rlp
 import copy
 from rlp.utils import decode_hex, ascii_chr
 from binascii import hexlify, unhexlify
-from .decorators import retry
 from gcoinbackend import core as gcoincore
 from gcoin import b58check_to_hex, hex_to_b58check
 from .exceptions import TxNotFoundError, TxUnconfirmedError
+from .evm_singleton import read_state
 
 
 def is_numeric(x):
@@ -44,16 +44,11 @@ def evm_address_to_wallet(evm_address, magicbyte=0):
 
 
 def get_evm_account_info(multisig_address):
-    contract_path = os.path.dirname(os.path.abspath(__file__)) + '/../states/' + multisig_address
-    try:
-        with open(contract_path.format(multisig_address=multisig_address), 'r') as f:
-            content = json.load(f)
-            accounts_info = []
-            for key, value in content['accounts'].items():
-                accounts_info.append([key, value['balance']])
-        return accounts_info
-    except Exception as e:
-        print(e)
+    content = read_state(multisig_address)
+    accounts_info = []
+    for key, value in content['accounts'].items():
+        accounts_info.append([key, value['balance']])
+    return accounts_info
 
 
 def mk_contract_address(sender, nonce):
@@ -105,18 +100,12 @@ def sha3(seed):
 
 def get_nonce(multisig_address, sender_address):
     sender_evm_address = wallet_address_to_evm(sender_address)
-    contract_path = os.path.dirname(os.path.abspath(__file__)) + '/../states/' + multisig_address
-    try:
-        with open(contract_path, 'r') as f:
-            content = json.load(f)
-            if sender_evm_address in content['accounts']:
-                return content['accounts'][sender_evm_address]['nonce']
-            else:
-                return None
-    except IOError as e:
-        """If there is no state file, we still return null
-        """
-        print(e)
+    content = read_state(multisig_address, account=sender_evm_address)
+    if content == {}:
+        return None
+    elif sender_evm_address in content['accounts']:
+        return content['accounts'][sender_evm_address]['nonce']
+    else:
         return None
 
 
@@ -205,7 +194,6 @@ def _process_op_return(tx):
     return data
 
 
-@retry(10)
 def get_tx(tx_hash, confirmations=0):
     tx = gcoincore.get_tx(tx_hash)
     if tx is None:
