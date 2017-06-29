@@ -95,3 +95,23 @@ def call_const_func(multisig_address, code, contract_address, sender_evm_address
         sender=sender_evm_address, multisig=multisig_address, code=code, receiver=contract_address)
     out = run_evm(command)
     return {'out': out.decode().split()[-1]}
+
+
+def check_state(multisig_address, tx_hash):
+    command = '--multisig ' + multisig_address + ' --txhash ' + tx_hash + ' --check'
+    out = run_evm(command)
+    out = out.decode().split()[-1]
+    if out == 'true':
+        return True
+    else:
+        return False
+
+def read_tx_result_file(filename):
+    filepath = evm_daemon_settings['TX_RESULT_DIR'] + filename
+    contract_address = []
+    with open(filepath, 'r') as f:
+        for line in f:
+            words = line.split()
+            if words[-1] == 'true':
+                contract_address.append(words[3])
+    return contract_address

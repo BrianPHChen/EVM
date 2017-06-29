@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from rest_framework.views import APIView
 from evm_manager.models import StateInfo
-from evm_manager import deploy_contract_utils
+from evm_manager import evm_singleton
 from gcoinbackend import core as gcoincore
 
 import requests
@@ -28,47 +28,22 @@ def std_response(**kwargs):
     return response
 
 
-class CheckUpdate(APIView):
+class CheckState(APIView):
     http_method_name = ['get']
 
     def get(self, request, multisig_address, tx_hash):
         try:
-            completed = self._check_update(multisig_address, tx_hash)
-            response = std_response(completed=completed)
+            contract_address = []
+            completed = evm_singleton.check_state(multisig_address, tx_hash)
+            if completed:
+                try:
+                    contract_address = evm_singleton.read_tx_result_file('0x'+tx_hash)
+                except:
+                    print("failed to read the transaction result file")
+                response = std_response(completed=completed, contract_address=contract_address)
+            else:
+                response = std_response(completed=completed)
             return JsonResponse(response, status=httplib.OK)
         except Exception as e:
             response = std_response(completed=False)
             return JsonResponse(response, status=httplib.OK)
-
-    def _check_update(self, multisig_address, tx_hash):
-        no_data = ''
-        try:
-            state = StateInfo.objects.get(multisig_address=multisig_address)
-            latest_tx_time = state.latest_tx_time
-            latest_tx_hash = state.latest_tx_hash
-
-            if latest_tx_hash == tx_hash:
-                return True
-            if latest_tx_hash == no_data:
-                return False
-
-            if multisig_address != deploy_contract_utils.get_multisig_address(tx_hash):
-                return False
-
-            tx = deploy_contract_utils.get_tx(tx_hash)
-            _time = tx['time']
-            if int(_time) > int(latest_tx_time):
-                return False
-            elif int(_time) < int(latest_tx_time):
-                return True
-
-            txs = gcoincore.get_txs_by_address(multisig_address, starting_after=latest_tx_hash).get('txs')
-            for i, tx in enumerate(txs):
-                if tx.get('hash') == tx_hash:
-                    return True
-                if int(tx.get('time')) != int(latest_tx_time):
-                    return False
-            return False
-
-        except Exception as e:
-            raise e
