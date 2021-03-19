@@ -1,7 +1,7 @@
 certifi==2017.4.17
 chardet==3.0.4
 Django==1.11.2
-djangorestframework==3.6.3
+djangorestframework==3.11.2
 gcoin==1.1.47
 idna==2.5
 pysha3==1.0.2
